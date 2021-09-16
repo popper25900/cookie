@@ -8,8 +8,12 @@ cd desktop
 
 git clone https://github.com/popper25900/cookie.git
 
-then run this cd cookie
+# then run this 
 
-then type python main.py
+cd cookie
 
-then u get bobuc
+# then type 
+
+python main.py
+
+then u get bobuc!!!!1111
