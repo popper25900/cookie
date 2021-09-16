@@ -17,3 +17,7 @@ cd cookie
 python main.py
 
 then u get bobuc!!!!1111
+
+# here is a good tutorial for how to run git hub files with python!
+
+https://projectdestroyer.com/2018/01/run-scripts-github/
