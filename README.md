@@ -4,9 +4,15 @@
 # download the latest version of python and run this
 cd desktop
 
-# then run this 
+# then go back to github 
 
-git clone https://github.com/popper25900/cookie.git
+then click on code and download zip file
+
+# after thats done downloading
+
+open it then click extract to then ok
+
+# then go back to the thing your coding with
 
 # then run this 
 
